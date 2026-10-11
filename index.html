@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0a1120">
+  <title>Phát Hiện Bất Thường</title>
+  <meta name="description" content="Bạn là bảo vệ ca đêm. Thấy gì khác thường, báo ngay.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- 1. Màn mở đầu -->
+    <section class="screen active" id="screen-menu" aria-labelledby="game-title">
+      <div class="menu-wrap">
+        <p class="rec"><span class="rec-dot"></span>REC · CA ĐÊM</p>
+        <h1 id="game-title" class="title">PHÁT HIỆN<br><span>BẤT THƯỜNG</span></h1>
+        <p class="tagline">Ca đêm bắt đầu. Hãy giữ bình tĩnh.</p>
+        <ul class="rules">
+          <li>Xem từng phòng qua camera.</li>
+          <li>Không có gì lạ → <b>Bình thường</b>.</li>
+          <li>Thấy gì khác → <b>Có gì đó sai sai</b>.</li>
+          <li>Sai một lần là hết ca.</li>
+        </ul>
+        <div class="menu-actions">
+          <button class="btn btn-primary" id="btn-start">Bắt đầu ca đêm</button>
+          <button class="btn btn-ghost" id="btn-board">Bảng xếp hạng</button>
+          <button class="btn btn-ghost btn-small hidden" id="btn-preview">🛠 Xem thử bất thường</button>
+        </div>
+        <p class="menu-foot">
+          <span id="menu-player"></span>
+          <button class="link" id="btn-rename">Đổi biệt danh</button>
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. Nhập biệt danh -->
+    <section class="screen" id="screen-name" aria-labelledby="name-title">
+      <form class="card name-card" id="name-form" autocomplete="off" novalidate>
+        <h2 id="name-title">Ký tên vào sổ trực</h2>
+        <p class="muted">Biệt danh sẽ hiện trên bảng xếp hạng.</p>
+        <input id="name-input" type="text" inputmode="text" enterkeyhint="done" spellcheck="false" placeholder="Ví dụ: Cú Đêm">
+        <p class="error" id="name-error" role="alert"></p>
+        <button class="btn btn-primary" type="submit">Nhận ca</button>
+        <button class="btn btn-ghost" type="button" id="name-cancel">Quay lại</button>
+      </form>
+    </section>
+
+    <!-- 3. Màn chơi -->
+    <section class="screen" id="screen-play">
+      <header class="hud">
+        <div class="timer" aria-hidden="true"><div class="timer-fill" id="timer-fill"></div></div>
+        <div class="hud-row">
+          <div class="hud-score"><small>Điểm</small><b id="hud-score">0</b></div>
+          <div class="hud-streak"><small>Chuỗi</small><b id="hud-streak">0</b><em id="hud-mult">x1</em></div>
+          <button class="hud-quit hidden" id="btn-quit" aria-label="Thoát">✕</button>
+        </div>
+      </header>
+
+      <div class="stage" id="stage">
+        <div class="frame" id="frame">
+          <canvas id="scene-canvas" aria-label="Hình camera phòng trưng bày"></canvas>
+          <div class="static" aria-hidden="true"></div>
+          <div class="scanlines" aria-hidden="true"></div>
+          <div class="cam-overlay" aria-hidden="true">
+            <span class="cam-left"><span class="rec-dot"></span><span id="cam-label">CAM 01</span></span>
+            <span class="cam-right" id="cam-clock">22:00</span>
+          </div>
+          <div class="flash" id="flash" aria-hidden="true"></div>
+          <div class="pop" id="pop" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <footer class="controls">
+        <button class="btn btn-answer btn-normal" id="btn-normal">Bình thường</button>
+        <button class="btn btn-answer btn-wrong" id="btn-anomaly">Có gì đó sai sai</button>
+        <!-- Lời giải thích hiện đè lên vùng nút (nút đã khóa) để không che cảnh -->
+        <div class="verdict" id="verdict" role="status" aria-live="polite">
+          <b id="verdict-title"></b>
+          <p id="verdict-text"></p>
+        </div>
+      </footer>
+    </section>
+
+    <!-- 5. Màn kết quả -->
+    <section class="screen" id="screen-result" aria-labelledby="result-title">
+      <div class="card result-card">
+        <p class="muted small">Hết ca trực</p>
+        <h2 id="result-title" class="result-title">Thực tập sinh ca đêm</h2>
+        <div class="result-score"><small>Điểm</small><b id="result-score">0</b></div>
+        <div class="result-stats">
+          <div><small>Chuỗi dài nhất</small><b id="result-streak">0</b></div>
+          <div><small>Hạng tuần</small><b id="result-rank-week">…</b></div>
+          <div><small>Hạng tổng</small><b id="result-rank-all">…</b></div>
+        </div>
+        <p class="muted small" id="result-best"></p>
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btn-replay">Chơi lại</button>
+          <button class="btn btn-ghost" id="btn-share">Khoe điểm</button>
+          <div class="row-2">
+            <button class="btn btn-ghost btn-small" id="btn-result-board">Bảng xếp hạng</button>
+            <button class="btn btn-ghost btn-small" id="btn-result-menu">Về sảnh</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Bảng xếp hạng -->
+    <section class="screen" id="screen-board" aria-labelledby="board-title">
+      <div class="board-head">
+        <button class="btn-back" id="board-back" aria-label="Quay lại">←</button>
+        <h2 id="board-title">Bảng xếp hạng</h2>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" role="tab" data-period="week" aria-selected="true">Tuần này</button>
+        <button class="tab" role="tab" data-period="all" aria-selected="false">Tổng</button>
+      </div>
+      <ol class="board-list" id="board-list"></ol>
+    </section>
+
+    <!-- Hộp thoại xem ảnh khoe điểm (khi máy không hỗ trợ chia sẻ file) -->
+    <div class="modal hidden" id="share-modal" role="dialog" aria-modal="true" aria-label="Ảnh kết quả">
+      <div class="modal-box">
+        <img id="share-img" alt="Ảnh kết quả ca trực">
+        <p class="muted small">Nhấn giữ ảnh để lưu, hoặc bấm tải về.</p>
+        <div class="row-2">
+          <a class="btn btn-primary btn-small" id="share-download" download="ket-qua-ca-dem.png">Tải ảnh</a>
+          <button class="btn btn-ghost btn-small" id="share-close">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="sound-toggle" id="btn-sound" aria-label="Tắt/bật tiếng">🔊</button>
+  </div>
+
+  <script src="scenes.js" defer></script>
+  <script src="leaderboard.js" defer></script>
+  <script src="game.js" defer></script>
+</body>
+</html>
